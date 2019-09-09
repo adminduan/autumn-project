@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta charset="utf-8">
+        <title>新增菜单</title>
+        <link th:href="@{/layui/css/layui.css}" rel="stylesheet"/>
+        <!--        <link href="/layui/css/layui.css" rel="stylesheet"/>-->
+    </head>
+    <body>
+        <form class="layui-form" action="" lay-filter="add-menu">
+            <div class="layui-form-item">
+                <label class="layui-form-label">父级菜单</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <select id="parentId" name="parentId" lay-filter="aihao">
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">菜单名</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <input type="text" name="menuName" lay-verify="menuNameVerify" autocomplete="off" placeholder="请输入菜单名" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">菜单地址</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <input type="text" name="menuUrl" lay-verify="menuUrlVerify" autocomplete="off" placeholder="请输入标题" class="layui-input">
+                </div>
+            </div>
+
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">启用</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="menuUsing" checked lay-skin="switch" value="1" lay-text="ON|OFF">
+                </div>
+            </div>
+
+
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit="" lay-filter="addMenuSubmit">提交</button>
+                </div>
+            </div>
+        </form>
+        <script th:src="@{/layui/layui.js}"></script>
+        <script th:inline="javascript">
+            //Demo
+            layui.use('form', function(){
+                var form = layui.form;
+                var layer = layui.layer;
+                var $ = layui.jquery;
+
+                var token = layui.data("user_token");
+                //动态加载住菜单
+                $.ajax({
+                    type: 'get',
+                    url: '/sys-menu/list-parent-sys-menu/0',
+                    dataType: 'json',
+                    headers: {
+                        token:token.token
+                    },
+                    success: function (data_raw) {
+                        var content = "<option value='0'>根节点</option>";
+                        $.each(data_raw.data, function (i, obj) {
+                            //防止 当前选择的是 父节点，选择自身构成死循环
+                            content += "<option value='" + obj.id + "'>" + obj.menuName + "</option>";
+                        })
+                        $("#parentId").append(content);
+                        form.render("select", "add-menu");
+                    }
+                });
+
+
+                form.verify({
+                    menuNameVerify: function (value) {
+                        if(value.length <= 0){
+                            return '请输入菜单名';
+                        }
+                    },
+                    menuUrlVerify: function (value) {
+                        if(value.length <= 0){
+                            return '请输入菜单地址';
+                        }
+                    }
+                });
+
+                //监听提交
+                form.on('submit(addMenuSubmit)', function(data){
+                    var index = layer.load();
+                    var request_obj = {"parentId": data.field.parentId, "menuName": data.field.menuName, "menuUrl": data.field.menuUrl, "menuUsing": !(data.field.menuUsing == null)}
+                    $.ajax({
+                        type: 'post',
+                        url: '/sys-menu/add-sys-menu',
+                        dataType: 'json',
+                        contentType: 'application/json; charset=utf-8',
+                        data: JSON.stringify(request_obj),
+                        headers: {
+                            token:token.token
+                        },
+                        success: function (raw_data) {
+                            if (raw_data.code === 1){
+                                parent.layer.msg("新增成功!", {time: 1000}, function () {
+                                    //重新加载父页面
+                                    parent.location.reload();
+                                });
+                            } else {
+                                layer.msg(raw_data.message);
+                            }
+                            layer.close(index);
+                        }
+                    });
+                    return false;
+                });
+            });
+        </script>
+    </body>
+</html>

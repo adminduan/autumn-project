@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta charset="utf-8">
+        <title>用户信息</title>
+        <link th:href="@{/layui/css/layui.css}" rel="stylesheet"/>
+    </head>
+    <body>
+        <form class="layui-form" action="" lay-filter="user-info">
+            <div class="layui-form-item">
+                <label class="layui-form-label">用户名</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <input type="text" disabled name="user_name" autocomplete="off" placeholder="请输入用户名" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">显示名</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <input type="text" disabled name="name" autocomplete="off" placeholder="请输入用户名" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">性别</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <select id="sex" name="sex" disabled lay-filter="sex">
+                        <option value='1'>男</option>
+                        <option value='2'>女</option>
+                    </select>
+                </div>
+            </div>
+
+        </form>
+        <script th:src="@{/layui/layui.js}"></script>
+        <script th:inline="javascript">
+            //Demo
+            layui.use('form', function(){
+                var form = layui.form;
+
+                var userObj = [[${user}]];
+                form.val('user-info', {
+                    "user_name": userObj.userName,
+                    "name": userObj.name,
+                    "sex": userObj.sex,
+                });
+            });
+        </script>
+    </body>
+</html>

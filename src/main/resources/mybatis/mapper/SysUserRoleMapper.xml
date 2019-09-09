@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.white.mapper.SysUserRoleMapper">
+
+
+    <resultMap id="BaseMap" type="com.white.bean.model.SysUserModel">
+        <result column="id" property="id"/>
+        <result column="user_name" property="userName"/>
+        <result column="password" property="password"/>
+        <result column="salt" property="salt"/>
+        <result column="name" property="name"/>
+        <result column="pic_url" property="picUrl"/>
+        <result column="sex" property="sex"/>
+        <result column="user_using" property="userUsing"/>
+        <result column="user_lock" property="userLock"/>
+        <result column="status" property="status"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <resultMap id="RoleUserMap" type="com.white.bean.model.ext.SysUserRoleQueryExtModel" extends="BaseMap">
+        <result column="role_name" property="roleName"/>
+    </resultMap>
+
+    <select id="listUserRole" resultMap="RoleUserMap" parameterType="com.white.bean.model.ext.request.SysUserRoleQueryExtRequest">
+        select u.id, u.user_name, u.password, u.salt, u.name, u.pic_url, u.sex, u.user_using, u.user_lock, u.status, u.update_time, u.create_time, p.role_name
+        from tbl_sys_user u left join
+        ( select ur.user_id, group_concat(r.role_name SEPARATOR ',') role_name
+        from tbl_sys_user_role ur inner join tbl_sys_role r on ur.role_id = r.id
+        where ur.status = 1 and r.status = 1 and r.role_using = 1
+        group by ur.user_id) p on u.id = p.user_id where u.status = 1
+        <if test="userName != null and userName != ''">
+            and u.user_name like concat(#{userName}, '%')
+        </if>
+        <if test="sex != null">
+            and u.sex = #{sex}
+        </if>
+        <if test="userUsing != null">
+            and u.user_using = #{userUsing}
+        </if>
+        <if test="userLock != null">
+            and u.user_lock = #{userLock}
+        </if>
+    </select>
+
+</mapper>

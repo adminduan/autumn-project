@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>登录</title>
+  <link th:href="@{/layui/css/layui.css}" rel="stylesheet"/>
+  <style rel="stylesheet">
+      body{
+        background-image: url('/img/index.jpg');
+        background-repeat: no-repeat;
+        background-size:100% 100%;
+        background-attachment: fixed;
+      }
+
+
+      .parent {
+        position: absolute;
+        left:40%;
+        top: 40%;
+      }
+  </style>
+</head>
+<body>
+  <form class="layui-form" action="" lay-filter="example">
+    <div class="parent">
+      <div class="layui-form-item">
+        <label class="layui-form-label">用户名</label>
+        <div class="layui-input-inline">
+          <input type="text" name="username" lay-verify="username" value="zhangsan" autocomplete="off" placeholder="请输入用户名" class="layui-input">
+        </div>
+      </div>
+      <div class="layui-form-item">
+        <label class="layui-form-label">密码</label>
+        <div class="layui-input-inline">
+          <input type="password" name="password" lay-verify="password" value="123456" placeholder="请输入密码" autocomplete="off" class="layui-input">
+        </div>
+      </div>
+      <div class="layui-form-item">
+        <div class="layui-input-block">
+          <button class="layui-btn" lay-submit="" lay-filter="logSubmit">立即提交</button>
+        </div>
+      </div>
+    </div>
+  </form>
+<script th:src="@{/layui/layui.js}"></script>
+  <script th:inline="javascript">
+    layui.use('form', function() {
+      var form = layui.form;
+      var layer = layui.layer;
+      var $ = layui.jquery;
+
+      form.verify({
+        username: function (value) {
+          if (value.length <= 0) {
+            return '请输入用户名';
+          }
+        },
+        password: function (value) {
+          if (value.length <= 0) {
+            return '请输入密码';
+          }
+        }
+      });
+
+      form.on('submit(logSubmit)', function (data) {
+        var index = layer.load();
+        var request_obj = {"userName": data.field.username, "password": data.field.password};
+        $.ajax({
+          type: 'post',
+          url: '/pub/sys-user/login',
+          dataType: 'json',
+          contentType: 'application/json; charset=utf-8',
+          data: JSON.stringify(request_obj),
+          success: function (raw_data) {
+            layui.data('role_id_list_table', null);
+            layui.data('user_token', null);
+            layui.data('user_table', null);
+            if (raw_data.code === 1) {
+              var roleIdList = raw_data.data.roleIdList;
+              if (roleIdList.length <= 0){
+                 layer.msg("用户没有权限");
+              } else {
+                layer.msg("登录成功");
+                layui.data("role_id_list_table", {key:'roleId', value: raw_data.data});
+                layui.data("user_token", {key:'token', value: raw_data.data.token});
+                layui.data("user_table", {key:'user', value: raw_data.data.simpleUser});
+                location.href="/index";
+              }
+            } else {
+              layer.msg(raw_data.message);
+            }
+            layer.close(index);
+          }
+        });
+        return false;
+      });
+    });
+  </script>
+</body>
+</html>

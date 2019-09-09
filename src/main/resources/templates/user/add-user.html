@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta charset="utf-8">
+        <title>新增用户</title>
+        <link th:href="@{/layui/css/layui.css}" rel="stylesheet"/>
+    </head>
+    <body>
+        <form class="layui-form" action="" lay-filter="add-user">
+            <div class="layui-form-item">
+                <label class="layui-form-label">用户名</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <input type="text" name="user_name" lay-verify="user_name_verify" autocomplete="off" placeholder="请输入用户名" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <input type="password" name="password" lay-verify="password_verify" autocomplete="off" placeholder="请输入用户名" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">显示名</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <input type="text" name="name" lay-verify="name_verify" autocomplete="off" placeholder="请输入用户名" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">性别</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <select id="sex" name="sex" lay-filter="sex">
+                        <option value='1'>男</option>
+                        <option value='2'>女</option>
+                    </select>
+                </div>
+            </div>
+
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">启用</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="user_using" checked lay-skin="switch" value="1" lay-text="ON|OFF">
+                </div>
+            </div>
+
+
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit="" lay-filter="add_user_submit">提交</button>
+                </div>
+            </div>
+        </form>
+        <script th:src="@{/layui/layui.js}"></script>
+        <script th:inline="javascript">
+            //Demo
+            layui.use('form', function(){
+                var form = layui.form;
+                var layer = layui.layer;
+                var $ = layui.jquery;
+
+                form.verify({
+                    user_name_verify: function (value) {
+                        if(value.length <= 0){
+                            return '请输入用户名';
+                        }
+                    },
+                    name_verify: function (value) {
+                        if(value.length <= 0){
+                            return '请输入显示名';
+                        }
+                    },
+                    password_verify: function (value) {
+                        if(value.length <= 0){
+                            return '请输入密码';
+                        }
+                    }
+                });
+
+                //监听提交
+                form.on('submit(add_user_submit)', function(data){
+                    var index = layer.load();
+                    var request_obj = {"userName": data.field.user_name,
+                                        "name": data.field.name,
+                                        "password": data.field.password,
+                                        "sex": data.field.sex,
+                                        "userUsing": !(data.field.user_using == null)}
+                    var token = layui.data("user_token");
+                    $.ajax({
+                        type: 'post',
+                        url: '/sys-user/add-user',
+                        dataType: 'json',
+                        contentType: 'application/json; charset=utf-8',
+                        data: JSON.stringify(request_obj),
+                        headers: {
+                            token:token.token
+                        },
+                        success: function (raw_data) {
+                            if (raw_data.code === 1){
+                                parent.layer.msg("新增成功!", {time: 1000}, function () {
+                                    //重新加载父页面
+                                    parent.location.reload();
+                                });
+                            } else {
+                                layer.msg(raw_data.message);
+                            }
+                            layer.close(index);
+                        }
+                    });
+                    return false;
+                });
+            });
+        </script>
+    </body>
+</html>

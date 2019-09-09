@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta charset="utf-8">
+        <title>修改角色</title>
+        <link th:href="@{/layui/css/layui.css}" rel="stylesheet"/>
+    </head>
+    <body>
+        <form class="layui-form" action="" lay-filter="edit-role">
+            <div class="layui-form-item">
+                <label class="layui-form-label">角色名</label>
+                <div class="layui-input-block" style="width: 50%;">
+                    <input type="text" name="role_name" lay-verify="role_name_verify" autocomplete="off" placeholder="请输入角色名" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">启用</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="role_using" lay-skin="switch" value="1" lay-text="ON|OFF">
+                </div>
+            </div>
+
+
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit="" lay-filter="edit_role_submit">提交</button>
+                </div>
+            </div>
+        </form>
+        <script th:src="@{/layui/layui.js}"></script>
+        <script th:inline="javascript">
+            //Demo
+            layui.use('form', function(){
+                var form = layui.form;
+                var layer = layui.layer;
+                var $ = layui.jquery;
+
+                var role_vo = [[${roleVo}]];
+                form.val('edit-role', {
+                    "role_name": role_vo.roleName,
+                    "role_using": role_vo.roleUsing
+                });
+
+
+                form.verify({
+                    role_name_verify: function (value) {
+                        if(value.length <= 0){
+                            return '请输入角色名';
+                        }
+                    }
+                });
+
+                //监听提交
+                form.on('submit(edit_role_submit)', function(data){
+                    var index = layer.load();
+                    var request_obj = {"id": role_vo.id, "roleName": data.field.role_name, "roleUsing": !(data.field.role_using == null)};
+                    var token = layui.data("user_token");
+                    $.ajax({
+                        type: 'post',
+                        url: '/sys-role/update-sys-role',
+                        dataType: 'json',
+                        contentType: 'application/json; charset=utf-8',
+                        data: JSON.stringify(request_obj),
+                        headers: {
+                            token:token.token
+                        },
+                        success: function (raw_data) {
+                            if (raw_data.code === 1){
+                                parent.layer.msg("修改成功!", {time: 1000}, function () {
+                                    //重新加载父页面
+                                    parent.location.reload();
+                                });
+                            } else {
+                                layer.msg(raw_data.message);
+                            }
+                            layer.close(index);
+                        }
+                    });
+                    return false;
+                });
+            });
+        </script>
+    </body>
+</html>

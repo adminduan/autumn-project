@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta charset="utf-8">
+        <title>菜单角色关系</title>
+        <link th:href="@{/layui/css/layui.css}" rel="stylesheet"/>
+        <!--        <link href="/layui/css/layui.css" rel="stylesheet"/>-->
+    </head>
+    <body>
+
+<!--        <fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">-->
+<!--            <legend>分配菜单和角色</legend>-->
+<!--        </fieldset>-->
+        <div id="menu-role" class="menu-role-transfer"></div>
+
+        <div class="layui-row">
+            <button class="layui-btn" lay-submit="" lay-demotransferactive="getData">提交</button>
+        </div>
+
+        <script th:src="@{/layui/layui.js}"></script>
+        <script th:inline="javascript">
+            layui.use(['transfer', 'layer', 'util'], function(){
+                var $ = layui.$
+                    ,transfer = layui.transfer
+                    ,layer = layui.layer
+                    ,util = layui.util;
+
+                var menu_obj = [[${menuObj}]];
+
+                var un_select_list = [];
+                var select_list = [];
+                var token = layui.data("user_token");
+                $.ajax({
+                    type: "get",
+                    url: "/sys-role/list-sys-role-all",
+                    dataType: "json",
+                    headers: {
+                        token:token.token
+                    },
+                    success: function (dataRaw) {
+                        if (dataRaw.code === 1){
+                            $.each(dataRaw.data, function (i, obj) {
+                                if (obj.roleLock){
+                                    un_select_list.push({"value": obj.id, "title": obj.roleName, "disabled": true});
+                                } else {
+                                    un_select_list.push({"value": obj.id, "title": obj.roleName});
+                                }
+                            })
+                            reload();
+                        } else {
+                            layer.msg("加载菜单列表失败");
+                        }
+                    }
+                });
+
+                $.ajax({
+                    type: "get",
+                    url: "/sys-role/list-sys-role-by-menu-id/" + menu_obj.id,
+                    dataType: "json",
+                    headers: {
+                        token:token.token
+                    },
+                    success: function (dataRaw) {
+                        if (dataRaw.code === 1){
+                            $.each(dataRaw.data, function (i, obj) {
+                                select_list.push(obj.id);
+                            })
+                            reload();
+                        } else {
+                            layer.msg("加载菜单列表失败");
+                        }
+                    }
+                });
+
+
+
+                function reload(){
+                    transfer.render({
+                        elem: '#menu-role'
+                        ,data: un_select_list
+                        ,title: ['未分配角色', '已分配角色']
+                        , value: select_list
+                        ,showSearch: true
+                        ,id: 'selectRole'
+                        ,height: 300 //定义高度
+                    })
+                }
+
+
+                util.event('lay-demoTransferActive', {
+                    getData: function(othis){
+                        var getData = transfer.getData('selectRole'); //获取右侧数据
+
+                        var result = {menuId:menu_obj.id, roleIdSet: []}
+                        $.each(getData, function (i,d) {
+                            result.roleIdSet.push(d.value);
+                        });
+
+                        $.ajax({
+                            type: "post",
+                            url: "/sys-role-menu/add-menu-role",
+                            dataType: "json",
+                            contentType: "application/json; charset=utf-8",
+                            data: JSON.stringify(result),
+                            headers: {
+                                token:token.token
+                            },
+                            success: function (dataRaw) {
+                                if (dataRaw.code === 1){
+                                    parent.layer.msg("分配成功!", {time: 1000}, function () {
+                                        //重新加载父页面
+                                        parent.location.reload();
+                                    });
+                                } else {
+                                    layer.msg(dataRaw.message);
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

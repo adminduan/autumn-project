@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta charset="utf-8">
+        <title>菜单列表</title>
+        <link th:href="@{/layui/css/layui.css}" rel="stylesheet"/>
+   </head>
+    <body>
+
+        <form class="layui-form" action="" >
+            <div class="layui-inline">
+                <label class="layui-form-label">父级菜单</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="parent_menu_name" placeholder="父级菜单" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">菜单名</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="menu_name" placeholder="菜单名字" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">菜单地址</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="menu_url" placeholder="菜单地址" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">启用</label>
+                <div class="layui-input-inline" style="width: 50%;">
+                    <select name="menu_using" lay-filter="aihao">
+                        <option value=''>请选择</option>
+                        <option value='1'>是</option>
+                        <option value='0'>否</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-inline">
+                <div class="layui-input-inline">
+                    <button class="layui-btn" lay-submit="" lay-filter="search_menu">查询</button>
+                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </form>
+
+        <script type="text/html" id="addToolBarOperate">
+            <div class="layui-btn-container">
+                <button class="layui-btn layui-btn-sm" lay-event="add">添加</button>
+            </div>
+        </script>
+
+        <table id="menu" lay-filter="menuTable"></table>
+
+        <script type="text/html" id="lineBarOperate">
+            <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+            {{#  if(d.parentId != 0){ }}
+                <button class="layui-btn layui-btn-xs" lay-event="menu-transfer-role">分配角色</button>
+            {{# } }}
+        </script>
+
+        <script th:src="@{/layui/layui.js}"></script>
+        <script th:inline="none">
+            layui.use('table', function(){
+                var table = layui.table;
+                var layer = layui.layer;
+                var $ = layui.jquery;
+                var form = layui.form;
+
+                var where_obj = {menuName: null, parentMenuName: null, menuUrl: null, menuUsing: null}
+                var token = layui.data("user_token");
+                //第一个实例
+                var tableIns = table.render({
+                    elem: '#menu'
+                    ,url: '/sys-menu/list-sys-menu' //数据接口
+                    ,page: true //开启分页
+                    ,toolbar: "#addToolBarOperate"
+                    ,headers: {token: token.token}
+                    ,request: {
+                        pageName: 'pageNumber',
+                        limitName: 'pageSize'
+                    },response: {
+                        statusName: 'code',
+                        statusCode: 1,
+                        msgName: 'message',
+                        countName: 'count',
+                        dataName: 'data'
+                    }
+                    ,cols: [[ //表头
+                        {field: 'id', title: 'ID', width:50, sort: true, fixed: 'left'}
+                        ,{field: 'parentName', title: '父级菜单'}
+                        ,{field: 'menuName', title: '菜单名',  sort: true}
+                        ,{field: 'menuUrl', title: '菜单地址'}
+                        ,{field: 'menuUsing', width:60, title: '启用', templet: function (d) {
+                                return d.menuUsing ? "<span style='color: #000;'>是</span>" : "<span style='color: #CCC;'>否</span>";
+                                // var param = d.menuUsing ? "checked" : "";
+                                // return "<input type='checkbox' lay-skin='switch' lay-text='ON|OFF' " + param + " disabled/>"
+                            }}
+                        ,{field: 'updateTime', title: '修改时间'}
+                        ,{fixed: 'right', width: 200, title: '操作', toolbar: '#lineBarOperate'}
+                    ]]
+                });
+
+                table.on('toolbar(menuTable)', function (obj) {
+                    var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+                    switch (layEvent) {
+                        case 'add':
+                            addMenu();
+                            break;
+                    }
+                });
+
+
+                table.on('tool(menuTable)', function(obj){
+                    var data = obj.data; //获得当前行数据
+                    var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+                    switch (layEvent) {
+                        case 'edit':
+                            editMenu(data.id);
+                            break;
+                        case 'del':
+                            delMenu({"id":data.id});
+                            break;
+                        case 'menu-transfer-role':
+                            menuTransferRole(data.id);
+                            break;
+                    }
+                });
+
+                function menuTransferRole(id) {
+                    layer.open({
+                        type: 2,
+                        title: "分配角色",
+                        // skin: 'layui-layer-rim',
+                        area:  ['500px', '400px'],
+                        offset: '20px',
+                        content: '/menu/page/menu-transfer-role/'+id
+                    });
+                }
+
+                function addMenu() {
+                    layer.open({
+                        type: 2,
+                        title: "新增菜单",
+                        // skin: 'layui-layer-rim',
+                        area:  ['400px', '350px'],
+                        offset: '20px',
+                        content: '/menu/page/add-menu'
+                    });
+                }
+
+                function editMenu (id){
+                    layer.open({
+                        type: 2,
+                        title: "修改菜单",
+                        // skin: 'layui-layer-rim',
+                        area:  ['400px', '350px'],
+                        offset: '20px',
+                        content: '/menu/page/edit-menu/'+id
+                    });
+                }
+
+                function tableReload(){
+                    tableIns.reload({
+                        page: {
+                            curr: 1 //重新从第 1 页开始
+                        },where: where_obj
+                    });
+                }
+
+                function delMenu(id){
+                    layer.confirm('确认要删除吗?', function (index) {
+                        $.ajax({
+                            type: "post",
+                            url: "/sys-menu/delete-sys-menu",
+                            dataType: "json",
+                            contentType: "application/json; charset=utf-8",
+                            data: JSON.stringify(id),
+                            headers: {
+                                token:token.token
+                            },
+                            success: function (dataRaw) {
+                                if (dataRaw.code === 1){
+                                    tableReload();
+                                    layer.msg("删除成功");
+                                } else {
+                                    layer.msg(dataRaw.message);
+                                }
+                            }
+                        });
+                    })
+                }
+
+                form.on('submit(search_menu)', function(data){
+                    var index = layer.load();
+                    where_obj.menuName = data.field.menu_name;
+                    where_obj.parentMenuName = data.field.parent_menu_name;
+                    where_obj.menuUrl = data.field.menu_url;
+                    where_obj.menuUsing = data.field.menu_using;
+                    console.log(where_obj);
+                    tableReload();
+                    layer.close(index);
+                    return false;
+                });
+
+            });
+
+
+
+        </script>
+    </body>

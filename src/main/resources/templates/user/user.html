@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta charset="utf-8">
+        <title>用户列表</title>
+        <link th:href="@{/layui/css/layui.css}" rel="stylesheet"/>
+   </head>
+    <body>
+
+        <form class="layui-form" action="" >
+            <div class="layui-inline">
+                <label class="layui-form-label">用户名</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="user_name" placeholder="用户名" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">性别</label>
+                <div class="layui-input-inline" style="width: 50%;">
+                    <select name="user_sex" lay-filter="aihao">
+                        <option value=''>请选择</option>
+                        <option value='0'>未知</option>
+                        <option value='1'>男</option>
+                        <option value='2'>女</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">启用</label>
+                <div class="layui-input-inline" style="width: 50%;">
+                    <select name="user_using" lay-filter="aihao">
+                        <option value=''>请选择</option>
+                        <option value='1'>是</option>
+                        <option value='0'>否</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">锁定</label>
+                <div class="layui-input-inline" style="width: 50%;">
+                    <select name="user_lock" lay-filter="aihao">
+                        <option value=''>请选择</option>
+                        <option value='1'>是</option>
+                        <option value='0'>否</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-inline">
+                <div class="layui-input-inline">
+                    <button class="layui-btn" lay-submit="" lay-filter="search_user">查询</button>
+                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                </div>
+            </div>
+        </form>
+
+
+        <script type="text/html" id="addToolBarOperate">
+            <div class="layui-btn-container">
+                <button class="layui-btn layui-btn-sm" lay-event="add">添加</button>
+            </div>
+        </script>
+
+        <table id="user" lay-filter="userTable"></table>
+
+        <script type="text/html" id="lineBarOperate">
+            {{#  if(!d.userLock){ }}
+                <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                <a class="layui-btn layui-btn-xs" lay-event="user-transfer-role">分配角色</a>
+            {{#  } }}
+        </script>
+
+        <script type="text/html" id="sexLineBarOperate">
+            {{#  if(d.sex == 1){ }}
+                男
+            {{#  } else if (d.sex == 2) { }}
+                女
+            {{# } else { }}
+                未知
+            {{# } }}
+        </script>
+
+        <script th:src="@{/layui/layui.js}"></script>
+        <script th:inline="none">
+            layui.use('table', function(){
+                var table = layui.table;
+                var layer = layui.layer;
+                var $ = layui.jquery;
+                var form = layui.form;
+                var token = layui.data("user_token");
+                var where_obj = {userName: null, sex: null, userUsing: null, userLock: null};
+                //第一个实例
+                var tableIns = table.render({
+                    elem: '#user'
+                    ,url: '/sys-user/list-user' //数据接口
+                    ,headers: {token: token.token}
+                    ,page: true //开启分页
+                    ,toolbar: "#addToolBarOperate"
+                    ,request: {
+                        pageName: 'pageNumber',
+                        limitName: 'pageSize'
+                    },response: {
+                        statusName: 'code',
+                        statusCode: 1,
+                        msgName: 'message',
+                        countName: 'count',
+                        dataName: 'data'
+                    }
+                    ,cols: [[ //表头
+                        {field: 'id', title: 'ID', width:50, sort: true, fixed: 'left'}
+                        ,{field: 'userName', title: '用户名'}
+                        ,{field: 'name', title: '显示名'}
+                        ,{field: 'roleName', title: '角色名'}
+                        ,{field: 'picUrl', width: 80, title: '头像', templet: function(d){
+                                return "<img src='" + d.picUrl + "' class='layui-nav-img'>";
+                            }}
+                        ,{field: 'sex', width: 60, title: '性别', toolbar: '#sexLineBarOperate'}
+                        ,{field: 'userUsing', width: 60, title: '启用', templet: function (d) {
+                                return d.userUsing ? "<span style='color: #000;'>是</span>" : "<span style='color: #CCC;'>否</span>";
+                            }}
+                        ,{field: 'userLock', width: 60, title: '锁定', templet: function (d) {
+                                return d.userLock ? "<span style='color: #000;'>是</span>" : "<span style='color: #CCC;'>否</span>";
+                            }}
+                        ,{field: 'createTime', title: '创建时间'}
+                        ,{fixed: 'right', width: 200,title: '操作', toolbar: '#lineBarOperate'}
+                    ]]
+                });
+
+                table.on('toolbar(userTable)', function (obj) {
+                    var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+                    switch (layEvent) {
+                        case 'add':
+                            add();
+                            break;
+                    }
+                });
+
+
+                table.on('tool(userTable)', function(obj){
+                    var data = obj.data; //获得当前行数据
+                    var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+                    switch (layEvent) {
+                        case 'edit':
+                            edit(data.id);
+                            break;
+                        case 'del':
+                            del({"id":data.id});
+                            break;
+                        case 'user-transfer-role':
+                            userTransferRole(data.id);
+                            break;
+                    }
+                });
+
+                function add() {
+                    layer.open({
+                        type: 2,
+                        title: "新增用户",
+                        // skin: 'layui-layer-rim',
+                        area:  ['500px', '400px'],
+                        offset: '20px',
+                        content: '/user/page/add-user'
+                    });
+                }
+
+                function edit(id){
+                    layer.open({
+                        type: 2,
+                        title: "修改用户",
+                        // skin: 'layui-layer-rim',
+                        area:  ['500px', '400px'],
+                        offset: '20px',
+                        content: '/user/page/edit-user/'+id
+                    });
+                }
+
+
+                function userTransferRole(id){
+                    layer.open({
+                        type: 2,
+                        title: "分配角色",
+                        // skin: 'layui-layer-rim',
+                        area:  ['500px', '400px'],
+                        offset: '20px',
+                        content: '/user/page/user-transfer-role/'+id
+                    });
+                }
+
+                function tableReload(){
+                    tableIns.reload({
+                        page: {
+                            curr: 1 //重新从第 1 页开始
+                        },where: where_obj
+                    });
+                }
+
+                function del(id){
+                    layer.confirm('确认要删除吗?', function (index) {
+                        $.ajax({
+                            type: "post",
+                            url: "/sys-user/delete-user",
+                            dataType: "json",
+                            contentType: "application/json; charset=utf-8",
+                            data: JSON.stringify(id),
+                            headers: {
+                                token:token.token
+                            },
+                            success: function (dataRaw) {
+                                if (dataRaw.code === 1){
+                                    tableReload();
+                                    layer.msg("删除成功");
+                                } else {
+                                    layer.msg("删除失败");
+                                }
+                            }
+                        });
+                    })
+                }
+
+                form.on('submit(search_user)', function(data){
+                    var index = layer.load();
+                    where_obj.userName = data.field.user_name;
+                    where_obj.userUsing = data.field.user_using;
+                    where_obj.userLock = data.field.user_lock;
+                    where_obj.sex = data.field.user_sex;
+                    tableReload();
+                    layer.close(index);
+                    return false;
+                });
+
+            });
+
+
+
+        </script>
+    </body>
