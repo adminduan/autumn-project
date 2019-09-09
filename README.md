@@ -20,5 +20,5 @@ layui 是页面架构信息
 密码： 123456
 
 #### 效果图
-![avatar](https://ibb.co/hyMz1BN)
-![avatar](https://ibb.co/qRJyQjq)
+![avatar](https://i.ibb.co/NLTVBCD/index.jpg)
+![avatar](https://i.ibb.co/drcYJPv/shouye.jpg)
